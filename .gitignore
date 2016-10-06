@@ -1,0 +1,13 @@
+/nbproject/private/
+/data/scheduler.xml
+/data/cricket.log
+/dist/todo-poc-core-1.0.2.jar
+/data/cricket.log.lck
+/src/java/org/cricketmsf/in/file/Watchdog.java
+/src/java/org/cricketmsf/in/cli/CliIface.java
+/dist/todo-poc-1.0.2.jar
+/nbproject/project.xml
+/src/java/org/cricketmsf/in/file/WatchdogIface.java
+/dist/cricket.json
+/src/java/org/cricketmsf/in/cli/Cli.java
+/src/java/org/cricketmsf/example/GreetingVO.java

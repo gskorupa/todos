@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="todo-poc" default="all" basedir="." 
+         xmlns:if="ant:if"
+         xmlns:unless="ant:unless">
+    <!-- you can modify the project name above -->
+    <description>Cricket microservice template project.</description>
+        
+    <!-- set your local properties for this build -->
+    <property name="version" value="1.0.2"/> <!-- service version -->
+    <property name="cricket-jar-location" value="lib/cricket-1.0.0.jar" />
+    <property name="docker-repository" value="gskorupa" />
+
+    <!-- uncomment if you need Tomcat libraries to compile the project -->
+    <!-- <property name="tomcat-home" value="/home/greg/apache-tomcat-7.0.67" /> -->
+    
+    <!-- configuration of libraries included in the distribution fat-jar -->
+    <property name="module-h2" value="false"/> <!-- include H2 embeded database in the distribution -->
+    
+        
+    <!-- do not modify properties below -->
+    <property name="src" location="src/java"/>
+    <property name="build" location="build/classes"/>
+    <property name="dist" location="dist"/>
+    <property name="lib" location="lib"/>
+    
+    <path id="project-classpath">
+        <pathelement location="${cricket-jar-location}"/>
+    </path>
+
+    <target name="init">
+        <!-- Create the build directory structure used by compile -->
+        <mkdir dir="${build}"/>
+    </target>
+
+    <target name="compile" depends="init" description="compile the source">
+        <!-- Compile the java code from ${src} into ${build} -->
+        <javac 
+            target="1.8" 
+            source="1.8" 
+            srcdir="${src}" 
+            destdir="${build}"
+            includeantruntime="false" 
+            classpathref="project-classpath">
+            <!--<compilerarg value="-Xlint:unchecked"/>-->
+        </javac>
+    </target>
+
+    <target name="dist" depends="clean, compile"
+            description="generate the distribution">
+        <!-- Create the distribution directory -->
+        <mkdir dir="${dist}"/>
+        <antcall inheritall="true" target="jar"/>
+        <copy todir="${dist}" file="${src}/cricket.json"/>
+    </target>
+
+    <target name="clean" description="clean up">
+        <delete dir="${build}"/>
+        <delete dir="${dist}"/>
+    </target>
+    
+    <target name="jar" depends="compile">
+        <copy todir="${build}" overwrite="true">
+            <fileset dir="${src}" includes="*.json"/>
+            <fileset dir="${src}" includes="*.txt"/>
+        </copy>
+        <jar destfile="${dist}/${ant.project.name}-core-${version}.jar">
+            <manifest>
+                <attribute name="Main-Class" value="org.cricketmsf.Runner"/>
+            </manifest>
+            <fileset dir="${build}"/>
+            <zipfileset src="${cricket-jar-location}" excludes="**/*.json" includes="**/*"/>
+        </jar>
+        <jar destfile="${dist}/${ant.project.name}-${version}.jar">
+            <manifest>
+                <attribute name="Main-Class" value="org.cricketmsf.Runner"/>
+            </manifest>
+            <fileset dir="${build}"/>
+            <zipfileset src="${cricket-jar-location}" excludes="**/*.json" includes="**/*"/>
+        </jar>
+    </target>
+    
+    <target name="docker-build" depends="jar" description="create new tagged image">
+        <exec executable="docker">
+            <arg value="build"/>
+            <arg value="-t"/>
+            <arg value="${docker-repository}/${ant.project.name}:${version}"/>
+            <arg value="."/>
+        </exec>
+    </target>
+    
+    <target name="docker-push" description="push current image to the repository">
+        <exec executable="docker">
+            <arg value="push"/>
+            <arg value="${docker-repository}/${ant.project.name}:${version}"/>
+        </exec>
+    </target>
+
+    <target name="docker-run" depends="jar" description="create and run the new container">
+        <exec executable="docker">
+            <arg value="run"/>
+            <arg value="-d"/>
+            <arg value="-p"/>
+            <arg value="127.0.0.1:8080:8080"/>
+            <arg value="-v"/>
+            <arg value="${basedir}/data:/usr/cricket/data"/>
+            <arg value="--name"/>
+            <arg value="${ant.project.name}"/>
+            <arg value="${docker-repository}/${ant.project.name}:${version}"/>
+        </exec>
+    </target>
+    
+    <target name="docker-start" depends="jar" description="start stopperd container">
+        <exec executable="docker">
+            <arg value="start"/>
+            <arg value="${ant.project.name}"/>
+        </exec>
+    </target>
+    
+    <target name="docker-stop" depends="jar" description="stop running container">
+        <exec executable="docker">
+            <arg value="stop"/>
+            <arg value="${ant.project.name}"/>
+        </exec>
+    </target>
+
+</project>
